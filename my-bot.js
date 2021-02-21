@@ -26,10 +26,20 @@ const bot = mineflayer.createBot({
 
 // Load plugins
 bot.loadPlugin(pathfinder);
+bot.loadPlugin(require("mineflayer-collectblock").plugin);
+
+const Inventory = require("./inventory");
+const inventory = new Inventory({ bot });
 
 bot.once("spawn", () => {
   // Once we've spawn, it is safe to access mcData because we know the version
   const mcData = require("minecraft-data")(bot.version);
+
+  // List all items in the world.
+  // console.log('All blocks:')
+  // for( item in mcData.blocksByName) {
+  //   console.log(mcData.blocksByName[item].name)
+  // }
 
   // We create different movement generators for different type of activity
   const defaultMove = new Movements(bot, mcData);
@@ -92,7 +102,7 @@ bot.once("spawn", () => {
         bot.pathfinder.setGoal(new GoalY(y));
       }
 
-    // FOLLOW command
+      // FOLLOW command
     } else if (message === "follow") {
       bot.pathfinder.setMovements(defaultMove);
       bot.pathfinder.setGoal(new GoalFollow(target, 3), true);
@@ -100,14 +110,57 @@ bot.once("spawn", () => {
       // when reached, the goal will stay active and will not
       // emit an event
 
-    // AVOID command
+      // AVOID command
     } else if (message === "avoid") {
       bot.pathfinder.setMovements(defaultMove);
       bot.pathfinder.setGoal(new GoalInvert(new GoalFollow(target, 5)), true);
 
-    // STOP (following) command
+      // STOP (following) command
     } else if (message === "stop") {
       bot.pathfinder.setGoal(null);
+      bot.collectBlock.cancelTask();
+
+      // COLLECT command.
+    } else if (message.startsWith("collect")) {
+      const cmd = message.split(" ");
+
+      const blockName = cmd[1];
+
+      try {
+        const blockId = mcData.blocksByName[blockName].id;
+
+        // Find a nearby grass block
+        const block = bot.findBlock({
+          matching: blockId,
+          maxDistance: 64
+        });
+        // console.log("grass1: ", grass);
+
+        if (block) {
+          // If we found one, collect it.
+          bot.collectBlock.collect(block, err => {
+            if (err) {
+              // Handle errors, if any
+              bot.chat(`Error trying to collect a ${block.name} block.`);
+              console.log(err);
+            } else {
+              console.log("block: ", block);
+              // await 1000;
+              // collectGrass(); // Collect another grass block
+              bot.chat(`I collected a ${block.name} block!`);
+            }
+          });
+        }
+      } catch (err) {
+        bot.chat(`Error trying to collect ${blockName}`);
+        console.log("Error in collect command: ", err);
+      }
+    } else if (message.startsWith("inv")) {
+      // console.log("inv detected...");
+
+      const cmd = message.split(" ");
+
+      inventory.handleInventory(cmd);
     }
   });
 });

@@ -1,0 +1,3 @@
+/*
+  A custom bot program made from combining several examples.
+*/

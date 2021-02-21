@@ -4,8 +4,12 @@
   "description": "",
   "main": "my-bot.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo no tests yet",
+    "start": "node my-bot.js"
   },
   "author": "",
-  "license": "ISC"
+  "license": "MIT",
+  "dependencies": {
+    "mineflayer": "^3.2.0"
+  }
 }
